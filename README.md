@@ -1,41 +1,42 @@
-# RateMyGaucho (Chrome Extension)
+# RateMyGaucho
 
-RateMyGaucho enhances UCSB GOLD to 1,200+ students per month by showing professor ratings and course data directly on course result pages. It works offline and preserves your privacy by using a local dataset.
+A Chrome extension that adds course info to UCSB GOLD. Next to each class you see its grade distribution, enrollment history, the professor, and a recent student review, so you don't have to look it up in another tab.
 
-**Demo Video**: [https://www.youtube.com/watch?v=fl7-icSAves](https://www.youtube.com/watch?v=l6YT86jc_6U)
+It also adds a search bar where you can type things like "easy CMPSC classes on MWF mornings".
 
-## Novel Features
+<!-- screenshot / demo -->
 
-*   **Offline & Private**: Works without an internet connection and never sends your data to external servers. All data lives in a single packaged CSV (`courses_final_enrollment.csv`).
-*   **Gaucho-Themed Ratings**: Displays professor ratings with custom, partially-filled Gaucho star icons for at-a-glance assessments.
-*   **In-Depth Course Data**: Goes beyond professor ratings to show course-specific details like grading trends, enrollment history, and recent student reviews.
-*   **Visual Summaries**: Inline bar charts translate grade distributions and historic enrollment snapshots into easy-to-interpret visuals.
-*   **Smart Review Filtering**: Intelligently filters reviews to show only those relevant to the specific instructor, providing more accurate insights.
-*   **UCSB Plat Integration**: Provides direct links to professor profiles and curriculum pages on UCSB Plat.
+## Install
 
-## Installation
+1. Download the latest zip from [Releases](https://github.com/ajitsxro/RateMyGaucho/releases) and unzip it.
+2. Go to `chrome://extensions` and turn on Developer mode.
+3. Click **Load unpacked** and pick the unzipped folder.
+4. Open GOLD. Cards show up on your schedule and in course search results.
 
-1.  Download the latest release from the [Releases page](https://github.com/ajitsxro/RateMyGaucho/releases).
-2.  Extract the ZIP file.
-3.  Open Chrome, go to `chrome://extensions`, and enable "Developer mode".
-4.  Click "Load unpacked" and select the extracted folder.
+## How it works
 
-## Building
+All the data ships with the extension in `courses_final_enrollment.csv` (one row per course and professor, pulled from UCSB Plat). Nothing is sent anywhere.
 
-To create a distributable ZIP file, run the appropriate script for your OS:
-*   **Windows**: `./scripts/package.ps1`
-*   **macOS/Linux**: `bash ./scripts/package.sh`
+When a GOLD page loads, the extension finds the instructor column, works out which course each row belongs to, looks that course up in the CSV, and inserts a card under the course header.
 
-The build script bundles the unified dataset and content script into `dist/RateMyGaucho.zip`, which is ready to upload to the Chrome Web Store.
+| File | What it does |
+|---|---|
+| `content/csv.js` | Loads and parses the CSV |
+| `content/match.js` | Matches GOLD instructor names (`GARCIA J`, `Porter, Matt`) to the data |
+| `content/dom.js` | Finds instructor cells and course codes on the page |
+| `content/render.js` | Builds the card |
+| `content/search.js` | The search bar |
+| `content/content.js` | Starts everything |
 
-## Data Source
+To update the data, replace the CSV and rebuild.
 
-The extension ships with `courses_final_enrollment.csv` as its only data source. Every rating, review, and course record comes from this file, ensuring consistent results across the UI. When updating data, replace this CSV and rebuild the package.
+## Development
 
-## Contributing
-
-Contributions are welcome! Please fork the repository and submit a pull request.
+```bash
+node --test                 # run the tests
+bash scripts/package.sh     # build dist/RateMyGaucho.zip
+```
 
 ## License
 
-MIT © 2025
+MIT
