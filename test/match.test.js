@@ -67,6 +67,23 @@ test('a unique last name still matches when the initial is off', () => {
 	assert.equal(lookupName('CHILDRESS A'), 'James Childress');
 });
 
+test('two profs with the same last name are told apart by first initial', () => {
+	// Sarah Lam has far more reviews, which used to make her win every "LAM" lookup
+	assert.equal(lookupName('LAM K'), 'Kelvin Lam');
+	assert.equal(lookupName('LAM S'), 'Sarah Lam');
+	assert.equal(lookupName('Kelvin Lam'), 'Kelvin Lam');
+});
+
+test('a shared last name with an unknown initial is not guessed', () => {
+	assert.equal(lookupName('LAM J'), null);
+});
+
+test('same person listed under two departments still counts as one person', () => {
+	const profs = [prof('Ana', 'Ruiz', 4, 'MATH'), prof('Ana', 'Ruiz', 9, 'PSTAT')];
+	const hit = m.matchInstructor({ names: ['RUIZ B'] }, m.buildLookup(profs));
+	assert.equal(hit.numReviews, 9);
+});
+
 test('placeholder instructors do not match anyone', () => {
 	assert.equal(lookupName('STAFF'), null);
 	assert.equal(lookupName('TBA'), null);
@@ -78,6 +95,10 @@ test('multiple instructors in one cell are split up', () => {
 	assert.deepEqual(info.names, ['PORTER M', 'LAM K']);
 	assert.deepEqual(m.extractInstructorInfo({ textContent: 'PORTER M / LAM K' }).names, ['PORTER M', 'LAM K']);
 	assert.deepEqual(m.extractInstructorInfo({ textContent: 'PORTER M, LAM K' }).names, ['PORTER M', 'LAM K']);
+});
+
+test('with two instructors, an exact match beats a loose one', () => {
+	assert.equal(lookupName('PORTER M; LAM K'), 'Matt Porter');
 });
 
 test('csvProfessorMatches ignores accents', () => {

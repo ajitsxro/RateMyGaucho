@@ -215,18 +215,34 @@ function candidateKeysForName(name, dept) {
 	return Array.from(new Set(keys));
 }
 
+// Keys with a first initial win over last-name-only keys. A last-name-only key
+// is used only when that last name belongs to one person, so "LAM K" never
+// picks Sarah Lam just because she has more reviews.
 function matchInstructor(info, lookup) {
-	let best = null, bestScore = -1;
+	let best = null;
+	let fallback = null;
 	for (const name of info.names) {
 		for (const key of candidateKeysForName(name, '')) {
 			const list = lookup.get(key);
-			if (list && list.length) {
-				const top = list.slice().sort((a,b)=>b.numReviews-a.numReviews)[0];
-				if (top.numReviews > bestScore) { best = top; bestScore = top.numReviews; }
+			if (!list || !list.length) continue;
+			const top = mostReviewed(list);
+			const hasInitial = key.split('|')[1] !== '';
+			if (hasInitial) {
+				if (!best || top.numReviews > best.numReviews) best = top;
+			} else if (!fallback && countPeople(list) === 1) {
+				fallback = top;
 			}
 		}
 	}
-	return best;
+	return best || fallback;
+}
+
+function mostReviewed(list) {
+	return list.reduce((a, b) => (b.numReviews > a.numReviews ? b : a));
+}
+
+function countPeople(list) {
+	return new Set(list.map(r => `${normalizeName(r.firstName)}|${normalizeName(r.lastName)}`)).size;
 }
 
 // Exposed for unit tests (Node). Ignored in the browser.
