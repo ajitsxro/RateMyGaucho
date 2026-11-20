@@ -97,6 +97,12 @@ test('multiple instructors in one cell are split up', () => {
 	assert.deepEqual(m.extractInstructorInfo({ textContent: 'PORTER M, LAM K' }).names, ['PORTER M', 'LAM K']);
 });
 
+test('"Last, First" stays one name', () => {
+	assert.deepEqual(m.extractInstructorInfo({ textContent: 'Porter, Matt' }).names, ['Porter, Matt']);
+	assert.equal(lookupName('Porter, Matt'), 'Matt Porter');
+	assert.equal(lookupName('LAM, KELVIN'), 'Kelvin Lam');
+});
+
 test('with two instructors, an exact match beats a loose one', () => {
 	assert.equal(lookupName('PORTER M; LAM K'), 'Matt Porter');
 });

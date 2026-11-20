@@ -141,9 +141,20 @@ function makeKey(last, first, dept) {
 
 function extractInstructorInfo(node) {
 	const text = (node.textContent || '').replace(/\s+/g, ' ').trim();
-	// Split on various separators that might separate multiple instructor names
-	const names = text.split(/;|\u00a0|\/|,\s*(?=[A-Z])|\sand\s|&/i).map(s => s.trim()).filter(Boolean);
-	return { raw: text, names };
+	return { raw: text, names: splitInstructorNames(text) };
+}
+
+// "PORTER M; LAM K" and "PORTER M, LAM K" are two people, but "Porter, Matt"
+// is one person written last-name-first. A comma only separates people when
+// the pieces around it are full names (more than one word).
+function splitInstructorNames(text) {
+	const names = [];
+	for (const piece of text.split(/;|\/|\sand\s|&/i)) {
+		const parts = piece.split(/,\s*(?=[A-Z])/i).map(s => s.trim()).filter(Boolean);
+		if (parts.length === 2 && parts.every(p => !p.includes(' '))) names.push(parts.join(', '));
+		else names.push(...parts);
+	}
+	return names.map(s => s.trim()).filter(Boolean);
 }
 
 function candidateKeysForName(name, dept) {
