@@ -12,7 +12,7 @@
     {
       "matches": ["https://my.sa.ucsb.edu/*"],
       "exclude_matches": ["https://my.sa.ucsb.edu/gold/Logout.aspx*"],
-      "js": ["content/papaparse.min.js", "content/csv.js", "content/match.js", "content/dom.js", "content/content.js"],
+      "js": ["content/papaparse.min.js", "content/csv.js", "content/match.js", "content/dom.js", "content/render.js", "content/content.js"],
       "css": ["content/styles.css"],
       "run_at": "document_idle",
       "all_frames": true
