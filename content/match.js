@@ -226,3 +226,19 @@ function matchInstructor(info, lookup) {
 	}
 	return best;
 }
+
+// Exposed for unit tests (Node). Ignored in the browser.
+if (typeof module !== 'undefined') {
+	module.exports = {
+		normalizeName,
+		normalizePlain,
+		makeKey,
+		buildLookup,
+		extractInstructorInfo,
+		candidateKeysForName,
+		matchInstructor,
+		csvProfessorMatches,
+		filterReviewsByInstructor,
+		pickCourseDataForInstructor
+	};
+}
