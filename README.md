@@ -15,7 +15,7 @@ RateMyGaucho enhances UCSB GOLD to 1,200+ students per month by showing professo
 
 ## Installation
 
-1.  Download the latest release from the [Releases page](https://github.com/itsloganmann/RateMyGaucho/releases).
+1.  Download the latest release from the [Releases page](https://github.com/ajitsxro/RateMyGaucho/releases).
 2.  Extract the ZIP file.
 3.  Open Chrome, go to `chrome://extensions`, and enable "Developer mode".
 4.  Click "Load unpacked" and select the extracted folder.
