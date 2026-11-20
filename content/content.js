@@ -219,17 +219,6 @@ function parseCourseCsv(csvText) {
 	}
 }
 
-function parseJsonArray(jsonString) {
-	if (!jsonString || jsonString.trim() === '') return [];
-	try {
-		const parsed = JSON.parse(jsonString);
-		return Array.isArray(parsed) ? parsed : [];
-	} catch (e) {
-		console.warn('[RateMyGaucho] Failed to parse JSON array:', jsonString, e);
-		return [];
-	}
-}
-
 function parseFlexibleArray(raw, { delimiter = '|', type = 'string', reviewSeparator = null } = {}) {
 	if (!raw || String(raw).trim() === '' || String(raw).toLowerCase() === 'no data') return [];
 	const text = String(raw).trim();
