@@ -58,6 +58,11 @@ test('hyphenated last names match', () => {
 	assert.equal(lookupName('SMITH-JONES A'), 'Anna Smith-Jones');
 });
 
+test("apostrophes in last names are kept", () => {
+	assert.equal(lookupName("O'BRIEN K"), "Kevin O'Brien");
+	assert.equal(lookupName("Kevin O'Brien"), "Kevin O'Brien");
+});
+
 test('a unique last name still matches when the initial is off', () => {
 	assert.equal(lookupName('CHILDRESS A'), 'James Childress');
 });

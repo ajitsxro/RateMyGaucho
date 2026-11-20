@@ -149,7 +149,7 @@ function extractInstructorInfo(node) {
 function candidateKeysForName(name, dept) {
 	// Strip accents first so "GARCÍA J" doesn't turn into "GARC A J"
 	const clean = name.normalize('NFD').replace(/\p{Diacritic}/gu, '')
-		.replace(/\(.*?\)/g, '').replace(/[^A-Za-z,\s.-]/g, ' ').replace(/\s+/g, ' ').trim();
+		.replace(/\(.*?\)/g, '').replace(/[^A-Za-z,\s.'-]/g, ' ').replace(/\s+/g, ' ').trim();
 	const keys = [];
 	if (!clean) return keys;
 	
