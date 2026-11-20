@@ -120,6 +120,12 @@ test('review filter matches whole last names only', () => {
 	assert.deepEqual(out, ['Lam explains things well']);
 });
 
+test('review filter ignores accents on either side', () => {
+	const reviews = ['Garcia is the best', 'Prof García was great', 'Took it with Lopez'];
+	const out = m.filterReviewsByInstructor(reviews, { firstName: 'José', lastName: 'García' });
+	assert.deepEqual(out, ['Garcia is the best', 'Prof García was great']);
+});
+
 test('review filter accepts a first-name mention only with teaching context', () => {
 	const reviews = ['Kelvin was a great professor', 'Kelvin is my roommate'];
 	const out = m.filterReviewsByInstructor(reviews, { firstName: 'Kelvin', lastName: 'Lam' });

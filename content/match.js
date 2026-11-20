@@ -3,8 +3,8 @@
 function filterReviewsByInstructor(reviews, matchedInstructor) {
 	if (!Array.isArray(reviews) || !matchedInstructor) return [];
 	
-	const first = (matchedInstructor.firstName || '').toLowerCase().trim();
-	const last = (matchedInstructor.lastName || '').toLowerCase().trim();
+	const first = normalizePlain(matchedInstructor.firstName || '');
+	const last = normalizePlain(matchedInstructor.lastName || '');
 	
 	if (!last) return [];
 	
@@ -12,7 +12,7 @@ function filterReviewsByInstructor(reviews, matchedInstructor) {
 	const teachingTerms = ['prof', 'professor', 'instructor', 'lecture', 'class', 'midterm', 'final', 'homework', 'assignment', 'exam', 'grade', 'quiz', 'teach'];
 	
 	for (const review of reviews) {
-		const text = String(review || '').toLowerCase();
+		const text = normalizePlain(String(review || ''));
 		
 		// Use word boundaries to avoid false matches like "ang" in "change"
 		const lastRegex = new RegExp(`\\b${last.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
@@ -46,8 +46,8 @@ function pickCourseDataForInstructor(courseRecords, matchedInstructor) {
 	if (!Array.isArray(courseRecords) || courseRecords.length === 0) return null;
 	if (!matchedInstructor) return courseRecords[0];
 
-	const first = (matchedInstructor.firstName || '').toLowerCase().trim();
-	const last = (matchedInstructor.lastName || '').toLowerCase().trim();
+	const first = normalizePlain(matchedInstructor.firstName || '');
+	const last = normalizePlain(matchedInstructor.lastName || '');
 	const firstInitial = first ? first[0] : '';
 
 	let bestRecord = courseRecords[0];
@@ -64,7 +64,7 @@ function pickCourseDataForInstructor(courseRecords, matchedInstructor) {
 		// Add general scoring for fallback
 		const texts = Array.isArray(rec.recentReviews) ? rec.recentReviews : [];
 		for (const t of texts) {
-			const txt = String(t || '').toLowerCase();
+			const txt = normalizePlain(String(t || ''));
 			if (last && txt.includes(last)) score += 3;
 			if (first && txt.includes(first)) score += 2;
 			if (firstInitial && txt.includes(`${firstInitial}.`)) score += 1;
