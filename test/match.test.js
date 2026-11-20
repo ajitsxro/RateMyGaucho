@@ -49,6 +49,11 @@ test('unaccented GOLD name matches an accented CSV name', () => {
 	assert.equal(lookupName('GARCIA J'), 'José García');
 });
 
+test('accented GOLD name matches', () => {
+	assert.equal(lookupName('GARCÍA J'), 'José García');
+	assert.equal(lookupName('José García'), 'José García');
+});
+
 test('hyphenated last names match', () => {
 	assert.equal(lookupName('SMITH-JONES A'), 'Anna Smith-Jones');
 });
