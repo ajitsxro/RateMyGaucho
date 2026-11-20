@@ -1,68 +1,3 @@
-(function debugBanner(){ try { console.log('[RateMyGaucho] content v1.0.4 at', location.href); } catch(_){} })();
-
-// Debug function to test review filtering
-window.testReviewFiltering = async function() {
-	console.log('[RateMyGaucho] Testing review filtering...');
-	const courseLookup = await ensureCoursesLoaded();
-	const ratingsLookup = await ensureRatingsLoaded();
-	
-	if (!courseLookup || !ratingsLookup) {
-		console.error('[RateMyGaucho] Failed to load data for testing');
-		return;
-	}
-	
-	// Test with MATH 2A and known instructors
-	const testCourse = 'MATH 2A';
-	const courseRecords = courseLookup.get(testCourse);
-	
-	if (!courseRecords) {
-		console.log('[RateMyGaucho] No records found for', testCourse);
-		return;
-	}
-	
-	console.log(`[RateMyGaucho] Found ${courseRecords.length} records for ${testCourse}`);
-	
-	// Test with different instructors
-	const testInstructors = [
-		{ firstName: 'Matt', lastName: 'Porter' },
-		{ firstName: 'Raul', lastName: 'Rodriguez' },
-		{ firstName: 'Kelvin', lastName: 'Lam' }
-	];
-	
-	for (const instructor of testInstructors) {
-		console.log(`\n=== Testing ${instructor.firstName} ${instructor.lastName} ===`);
-		
-		const selectedData = pickCourseDataForInstructor(courseRecords, instructor);
-		if (selectedData) {
-			console.log('Selected course data:', selectedData.courseName);
-			console.log('Reviews filtered:', selectedData._reviewsFiltered);
-			console.log('Review count:', selectedData.recentReviews ? selectedData.recentReviews.length : 0);
-			
-			if (selectedData.recentReviews && selectedData.recentReviews.length > 0) {
-				console.log('Sample reviews:');
-				selectedData.recentReviews.slice(0, 2).forEach((review, i) => {
-					console.log(`  ${i + 1}: "${review.substring(0, 100)}..."`);
-				});
-			}
-			
-			// Test gating logic
-			const wouldBeGated = !(selectedData._reviewsFiltered && selectedData.recentReviews && selectedData.recentReviews.length > 0);
-			console.log('Would be gated (skipped):', wouldBeGated);
-		} else {
-			console.log('No course data selected for this instructor');
-		}
-	}
-};
-
-// Message probe to verify content script presence from page console
-try {
-	window.addEventListener('message', ev => {
-		if (ev && ev.data && ev.data.__rmg_probe) {
-			console.log('[RateMyGaucho] probe ack from content script');
-		}
-	});
-} catch {}
-
 (async function initRateMyGaucho() {
 	let path = location.pathname || '';
 	try { if (window.top && window.top.location) path = window.top.location.pathname || path; } catch {}
@@ -85,21 +20,13 @@ async function ensureRatingsLoaded() {
 		try {
 			const csvUrl = chrome.runtime.getURL('scores.csv');
 			const res = await fetch(csvUrl);
-			if (!res.ok) {
-				console.log('[RateMyGaucho] scores.csv not found (status', res.status, ') — ratings disabled');
-				return null;
-			}
+			if (!res.ok) return null;
 			const csvText = await res.text();
-			if (!csvText || csvText.trim().length < 10) {
-				console.log('[RateMyGaucho] scores.csv is empty — ratings disabled');
-				return null;
-			}
+			if (!csvText || csvText.trim().length < 10) return null;
 			const records = parseCsv(csvText);
 			__rmg_lookup = buildLookup(records);
-			console.log('[RateMyGaucho] ✅ Ratings loaded:', records.length, 'instructors');
 			return __rmg_lookup;
 		} catch (_e) {
-			console.log('[RateMyGaucho] scores.csv unavailable — ratings disabled');
 			return null;
 		} finally {
 			__rmg_loading = null;
@@ -117,15 +44,11 @@ async function ensureCoursesLoaded() {
 			const primaryUrl = chrome.runtime.getURL('courses_final_enrollment.csv');
 			
 			let csvText = null;
-			let sourceFile = null;
 			
 			try {
-				console.log('[RateMyGaucho] Attempting to load course data: courses_final_enrollment.csv');
 				const res = await fetch(primaryUrl);
 				if (res.ok) {
 					csvText = await res.text();
-					sourceFile = 'courses_final_enrollment.csv';
-					console.log('[RateMyGaucho] ✅ Successfully loaded courses_final_enrollment.csv');
 				}
 			} catch (primaryError) {
 				console.warn('[RateMyGaucho] Failed to load courses_final_enrollment.csv:', primaryError);
@@ -136,12 +59,10 @@ async function ensureCoursesLoaded() {
 				return null;
 			}
 			
-			console.log('[RateMyGaucho] Parsing course data from:', sourceFile);
 			const records = parseCourseCsv(csvText);
 			__rmg_course_lookup = buildCourseLookup(records);
 			// Store globally for extractCourseCode validation
 			window.__rmg_course_lookup = __rmg_course_lookup;
-			console.log('[RateMyGaucho] ✅ Course data loaded and indexed successfully');
 			return __rmg_course_lookup;
 		} catch (_e) {
 			console.error('[RateMyGaucho] Error loading course data:', _e);
@@ -291,23 +212,6 @@ function parseCourseCsv(csvText) {
 			
 			out.push(rec);
 		}
-		
-		console.log('[RateMyGaucho] Parsed', out.length, 'course records');
-		if (out.length > 0) {
-			console.log('[RateMyGaucho] Sample course records (first 3):');
-			out.slice(0, 3).forEach((rec, idx) => {
-				console.log(`  [${idx + 1}] ${rec.courseName}:`, {
-					courseUrl: rec.courseUrl ? '✓' : '✗',
-					csvProfessor: rec.csvProfessor || '(none)',
-					gradingTrend: rec.gradingTrend.length + ' items',
-					enrollmentTrend: rec.enrollmentTrend.length + ' items',
-					recentReviews: rec.recentReviews.length + ' reviews',
-					verification: rec.reviewVerification || '(none)',
-					expectedReviews: rec.expectedReviews !== undefined ? rec.expectedReviews : '(none)',
-					foundReviews: rec.foundReviews !== undefined ? rec.foundReviews : '(none)'
-				});
-			});
-		}
 		return out;
 	} catch (e) {
 		console.error('[RateMyGaucho] Error parsing course CSV:', e);
@@ -337,9 +241,8 @@ function parseFlexibleArray(raw, { delimiter = '|', type = 'string', reviewSepar
 			if (Array.isArray(parsed)) {
 				return type === 'number' ? parsed.map(v => Number(v)).filter(n => Number.isFinite(n)) : parsed.map(v => String(v));
 			}
-		} catch (jsonError) {
-			// Not valid JSON, continue to other parsing methods
-			console.debug('[RateMyGaucho] JSON parse failed, trying delimiter parsing:', jsonError.message);
+		} catch {
+			// not JSON, fall through to delimiter parsing
 		}
 	}
 
@@ -373,7 +276,6 @@ function buildCourseLookup(records) {
 			map.set(normalizedName, [rec]);
 		}
 	}
-	console.log('[RateMyGaucho] Built course lookup with', map.size, 'course keys');
 	return map;
 }
 
@@ -556,18 +458,11 @@ function observeAndRender() {
 
 	async function doScan() {
 		const nodes = findInstructorNodes();
-		console.log('[RateMyGaucho] instructor candidates:', nodes.length);
 		if (!nodes.length) return;
 		const lookup = await ensureRatingsLoaded();
 		const courseLookup = await ensureCoursesLoaded();
 		// Do NOT bail if lookup (scores.csv) is null — we can still show course data
 		if (!lookup && !courseLookup) return;
-		const sample = nodes.slice(0, 5).map(n => (n.textContent||'').trim().replace(/\s+/g,' '));
-		console.log('[RateMyGaucho] sample candidate texts:', sample);
-		
-		let matchedCount = 0;
-		let courseFoundCount = 0;
-		let totalProcessed = 0;
 		
 		for (const node of nodes) {
 			if (node.dataset.rmgInitialized === '1') continue;
@@ -582,25 +477,11 @@ function observeAndRender() {
 				if (nextRow && nextRow.classList.contains('rmg-card-row')) continue;
 			}
 
-			totalProcessed++;
-			
 			const info = extractInstructorInfo(node);
-			console.log('[RateMyGaucho] Processing:', info.raw, '-> names:', info.names);
-			
-			// Debug: show what keys are being generated
-			for (const name of info.names) {
-				const keys = candidateKeysForName(name, '');
-				console.log('[RateMyGaucho] Keys for', name, ':', keys.slice(0, 5)); // Show first 5 keys
-			}
-			
 			const match = lookup ? matchInstructor(info, lookup) : null;
 			const courseCode = extractCourseCode(node);
 			const courseList = courseCode && courseLookup ? courseLookup.get(normalizeCourseCode(courseCode)) : null;
 			const courseData = Array.isArray(courseList) ? pickCourseDataForInstructor(courseList, match) : null;
-			
-			if (courseCode) {
-				console.log('[RateMyGaucho] Extracted course code:', courseCode, 'normalized:', normalizeCourseCode(courseCode));
-			}
 
 			// De-duplicate: also check if the DOM already has a card for this course
 			if (row) {
@@ -612,7 +493,6 @@ function observeAndRender() {
 			// Determine gated course data (verify instructor matches course)
 			let gatedCourseData = null;
 			if (courseData) {
-				courseFoundCount++;
 				if (match) {
 					const verifiedByCsvProfessor = csvProfessorMatches(courseData, match);
 					const verifiedByFlag = typeof courseData?.reviewVerification === 'string'
@@ -626,13 +506,6 @@ function observeAndRender() {
 					gatedCourseData = (hasInstructorSpecificReviews || verifiedByCsvProfessor || verifiedByFlag)
 						? courseData
 						: null;
-					
-					if (!gatedCourseData) {
-						console.log('[RateMyGaucho] SKIPPED course data for',
-							`${match.firstName} ${match.lastName}`,
-							'- gating conditions not met',
-							{ hasInstructorSpecificReviews, verifiedByCsvProfessor, reviewVerification: courseData?.reviewVerification });
-					}
 				} else {
 					// No ratings match — show course data ungated (we can't verify by instructor)
 					gatedCourseData = courseData;
@@ -640,20 +513,12 @@ function observeAndRender() {
 			}
 			
 			if (match) {
-				matchedCount++;
 				// Only one card per course + instructor combination on the whole page
 				const instructorKey = `${match.lastName}|${match.firstName}`;
 				const courseInstructorKey = `${courseCode || 'none'}:${instructorKey}`;
 				if (__rmg_renderedCourseInstructors.has(courseInstructorKey)) continue;
 				__rmg_renderedCourseInstructors.add(courseInstructorKey);
 
-				console.log('[RateMyGaucho] MATCHED:', info.raw, '->', match.firstName, match.lastName, match.rmpScore);
-				if (gatedCourseData) {
-					const filterStatus = gatedCourseData._reviewsFiltered ? '(filtered)' : '(fallback)';
-					console.log('[RateMyGaucho] Course data chosen for instructor:',
-						`${match.firstName} ${match.lastName}`, '->', gatedCourseData.courseName,
-						'filteredReviews:', Array.isArray(gatedCourseData.recentReviews) ? gatedCourseData.recentReviews.length : 0, filterStatus);
-				}
 				renderCard(node, match, gatedCourseData);
 			} else if (gatedCourseData) {
 				// Only one course-only card per course code on the page
@@ -661,14 +526,9 @@ function observeAndRender() {
 				if (__rmg_renderedCourseOnly.has(courseOnlyKey)) continue;
 				__rmg_renderedCourseOnly.add(courseOnlyKey);
 
-				console.log('[RateMyGaucho] No ratings match for:', info.raw, '— rendering course-only card');
 				renderCard(node, null, gatedCourseData);
-			} else {
-				console.log('[RateMyGaucho] NO MATCH for:', info.raw);
 			}
 		}
-		
-		console.log(`[RateMyGaucho] Summary: ${matchedCount}/${totalProcessed} instructors matched, ${courseFoundCount}/${matchedCount} with course data`);
 	}
 }
 
@@ -1267,7 +1127,6 @@ function extractCourseCode(instructorNode) {
 			const text = (cell.textContent || '').trim();
 			const courseCode = findValidCourseCodeInText(text, window.__rmg_course_lookup);
 			if (courseCode) {
-				console.log('[RateMyGaucho] Extracted course code:', courseCode, 'from same row, text:', text.slice(0, 100));
 				return courseCode;
 			}
 		}
@@ -1280,7 +1139,6 @@ function extractCourseCode(instructorNode) {
 				const text = (cell.textContent || '').trim();
 				const courseCode = findValidCourseCodeInText(text, window.__rmg_course_lookup);
 				if (courseCode) {
-					console.log('[RateMyGaucho] Extracted course code:', courseCode, 'from prev row', i, 'text:', text.slice(0, 100));
 					return courseCode;
 				}
 			}
@@ -1295,7 +1153,6 @@ function extractCourseCode(instructorNode) {
 				const text = (prev.textContent || '').trim();
 				const courseCode = findValidCourseCodeInText(text, window.__rmg_course_lookup);
 				if (courseCode) {
-					console.log('[RateMyGaucho] Extracted course code:', courseCode, 'from ancestor walk level', up, 'sibling', j, 'text:', text.slice(0, 100));
 					return courseCode;
 				}
 				prev = prev.previousElementSibling;
@@ -1318,7 +1175,6 @@ function extractCourseCode(instructorNode) {
 					const text = (cell.textContent || '').trim();
 					const courseCode = findValidCourseCodeInText(text, window.__rmg_course_lookup);
 					if (courseCode) {
-						console.log('[RateMyGaucho] Extracted course code:', courseCode, 'from table search, text:', text.slice(0, 100));
 						return courseCode;
 					}
 				}
@@ -1339,7 +1195,6 @@ function extractCourseCode(instructorNode) {
 						const candidate = `${hrefMatch[1]} ${hrefMatch[2]}`;
 						const normalized = normalizeCourseCode(candidate);
 						if (window.__rmg_course_lookup && window.__rmg_course_lookup.has(normalized)) {
-							console.log('[RateMyGaucho] Extracted course code:', candidate, 'from Course Info href:', btn.href);
 							return candidate;
 						}
 					}
@@ -1353,7 +1208,6 @@ function extractCourseCode(instructorNode) {
 						const candidate = `${onclickMatch[1]} ${onclickMatch[2]}`;
 						const normalized = normalizeCourseCode(candidate);
 						if (window.__rmg_course_lookup && window.__rmg_course_lookup.has(normalized)) {
-							console.log('[RateMyGaucho] Extracted course code:', candidate, 'from Course Info onclick:', onclick.slice(0, 100));
 							return candidate;
 						}
 					}
@@ -1363,7 +1217,6 @@ function extractCourseCode(instructorNode) {
 			console.warn('[RateMyGaucho] Error in Course Info button extraction:', e);
 		}
 		
-		console.log('[RateMyGaucho] No course code found for instructor:', (instructorNode.textContent || '').trim());
 		return null;
 	} catch (e) {
 		console.warn('[RateMyGaucho] Error extracting course code:', e);
