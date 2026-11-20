@@ -15,25 +15,6 @@ yarn-error.log*
 .idea/
 .vscode/
 
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.egg-info/
-*.egg
-.eggs/
-venv/
-.venv/
-env/
-.env
-*.whl
-
-# Docker
-docker-compose.override.yml
-
-# Backend data
-backend/data/
-pgdata/
-esdata/
-
-
+# Dependencies / test output
+node_modules/
+test-results/
